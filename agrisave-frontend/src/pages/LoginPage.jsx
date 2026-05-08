@@ -21,10 +21,16 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [attemptsLeft, setAttemptsLeft] = useState(null);
 
-  // Auto-redirect jika sudah login / ada refresh token
+  // Auto-redirect jika sudah login
   useEffect(() => {
-    if (isAuthenticated) { navigate('/dashboard'); return; }
-    refreshAuth().then((ok) => { if (ok) navigate('/dashboard'); });
+    if (isAuthenticated) {
+      navigate('/dashboard');
+      return;
+    }
+    // Hanya coba refresh jika ada backend (VITE_API_URL tersedia)
+    if (import.meta.env.VITE_API_URL || import.meta.env.DEV) {
+      refreshAuth().then((ok) => { if (ok) navigate('/dashboard'); });
+    }
   }, []);
 
   const handleSubmit = async (e) => {
