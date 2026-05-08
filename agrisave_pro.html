@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGRISAVE.IO - Professional Crypto Vault</title>
+    <!-- Library Eksternal via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #05070a;
+            color: #d1d5db;
+            margin: 0;
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .card-glow:hover {
+            box-shadow: 0 0 40px rgba(190, 242, 100, 0.05);
+            border-color: rgba(190, 242, 100, 0.2);
+        }
+
+        .alert-glow {
+            box-shadow: 0 0 25px rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.4) !important;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #bef26433;
+            border-radius: 10px;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0.1;
+            }
+
+            50% {
+                transform: translateY(-30px) rotate(5deg);
+                opacity: 0.3;
+            }
+        }
+
+        .animate-float {
+            animation: float 10s ease-in-out infinite;
+        }
+
+        @keyframes pulse-red {
+
+            0%,
+            100% {
+                border-color: rgba(239, 68, 68, 0.4);
+                box-shadow: 0 0 10px rgba(239, 68, 68, 0.1);
+            }
+
+            50% {
+                border-color: rgba(239, 68, 68, 1);
+                box-shadow: 0 0 25px rgba(239, 68, 68, 0.5);
+            }
+        }
+
+        .animate-overdue {
+            animation: pulse-red 1.5s infinite;
+        }
+    </style>
+</head>
+
+<body class="custom-scrollbar text-left">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // Komponen Ikon SVG Internal (Stabil)
+        const Icon = ({ name, size = 20, className = "" }) => {
+            const icons = {
+                shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />,
+                "log-out": <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />,
+                search: <><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></>,
+                plus: <><path d="M12 5v14" /><path d="M5 12h14" /></>,
+                key: <path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3L15.5 7.5z" />,
+                unlock: <><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 9.9-1" /></>,
+                "trending-down": <><path d="m22 17-8.5-8.5-5 5L2 7" /><path d="M18 17h4v-4" /></>,
+                "trending-up": <><path d="m22 7-8.5 8.5-5-5L2 17" /><path d="M16 7h6v6" /></>,
+                user: <><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></>,
+                calendar: <><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><path d="M16 2v4M8 2v4M3 10h18" /></>,
+                folder: <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2z" />,
+                "shield-check": <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="m9 12 2 2 4-4" /></>,
+                printer: <><path d="M6 9V2h12v7" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect width="12" height="8" x="6" y="14" rx="1" ry="1" /></>,
+                tag: <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l4.58-4.58c.94-.94.94-2.48 0-3.42L12 2zM7 7h.01" />,
+                fileText: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></>,
+                trash: <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2m-6 5v6m4-6v6" />,
+                edit: <><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></>,
+                alert: <><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></>,
+                calculator: <><rect width="16" height="20" x="4" y="2" rx="2" /><line x1="8" y1="6" x2="16" y2="6" /><circle cx="16" cy="14" r="1" /><circle cx="16" cy="18" r="1" /><circle cx="12" cy="14" r="1" /><circle cx="12" cy="18" r="1" /><circle cx="8" cy="14" r="1" /><circle cx="8" cy="18" r="1" /></>
+            };
+
+            return (
+                <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                    {icons[name] || null}
+                </svg>
+            );
+        };
+
+        const TopHighlight = () => (
+            <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#bef264]/40 to-transparent"></div>
+        );
+
+        function App() {
+            // --- PERSISTENCE ---
+            const loadLocal = (key, def) => {
+                const item = localStorage.getItem(key);
+                try { return item ? JSON.parse(item) : def; } catch (e) { return def; }
+            };
+
+            // --- STATE ---
+            const [isLoggedIn, setIsLoggedIn] = useState(false);
+            const [authMode, setAuthMode] = useState('login');
+            const [currentUser, setCurrentUser] = useState(null);
+            const [currentRole, setCurrentRole] = useState('OPERATOR');
+            const [registeredUsers, setRegisteredUsers] = useState(() => loadLocal('agrisave_users', [
+                { username: 'iqbal', password: 'blackpink', role: 'SUPER_ADMIN' }
+            ]));
+            const [vault, setVault] = useState(() => loadLocal('agrisave_vault', []));
+            const [searchTerm, setSearchTerm] = useState('');
+            const [folderFilter, setFolderFilter] = useState('Semua');
+            const [authForm, setAuthForm] = useState({ username: '', password: '' });
+            const [showAddModal, setShowAddModal] = useState(false);
+            const [showDecryptModal, setShowDecryptModal] = useState(false);
+            const [showDeleteModal, setShowDeleteModal] = useState(false);
+            const [selectedRecord, setSelectedRecord] = useState(null);
+            const [decryptionKey, setDecryptionKey] = useState('');
+            const [deleteKey, setDeleteKey] = useState('');
+            const [decryptedData, setDecryptedData] = useState(null);
+            const [error, setError] = useState('');
+            const [successMsg, setSuccessMsg] = useState('');
+
+            const [isEditing, setIsEditing] = useState(false);
+            const [editingId, setEditingId] = useState(null);
+
+            const [newTransaction, setNewTransaction] = useState({
+                petani: '', komoditas: '', nominal: '', jenis_transaksi: 'Modal', kelompok_tani: '', tenggat_panen: '', keterangan: '', encryptionKey: ''
+            });
+
+            const [calcHarvest, setCalcHarvest] = useState('');
+            const [calcModal, setCalcModal] = useState('');
+
+            const studentName = "MUHAMMAD IQBAL ZAFARULLAH";
+            const studentNPM = "G1A024007";
+
+            useEffect(() => { localStorage.setItem('agrisave_users', JSON.stringify(registeredUsers)); }, [registeredUsers]);
+            useEffect(() => { localStorage.setItem('agrisave_vault', JSON.stringify(vault)); }, [vault]);
+
+            // --- CRYPTO LOGIC ---
+            const encryptAES = (plaintext, key) => {
+                try {
+                    const formattedKey = CryptoJS.enc.Utf8.parse(key.padEnd(16, ' ').substring(0, 16));
+                    const iv = CryptoJS.lib.WordArray.random(16);
+                    const encrypted = CryptoJS.AES.encrypt(plaintext, formattedKey, {
+                        iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7
+                    });
+                    return CryptoJS.enc.Base64.stringify(iv.concat(encrypted.ciphertext));
+                } catch (e) { return null; }
+            };
+
+            const decryptAES = (ciphertextBase64, key) => {
+                try {
+                    const formattedKey = CryptoJS.enc.Utf8.parse(key.padEnd(16, ' ').substring(0, 16));
+                    const rawData = CryptoJS.enc.Base64.parse(ciphertextBase64);
+                    const iv = CryptoJS.lib.WordArray.create(rawData.words.slice(0, 4));
+                    const ciphertext = CryptoJS.lib.WordArray.create(rawData.words.slice(4));
+                    const decrypted = CryptoJS.AES.decrypt({ ciphertext: ciphertext }, formattedKey, {
+                        iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7
+                    });
+                    return decrypted.toString(CryptoJS.enc.Utf8) || null;
+                } catch (e) { return null; }
+            };
+
+            // --- LOGIC: UTILITIES ---
+            const isPastDue = (dateStr) => {
+                if (!dateStr) return false;
+                const today = new Date(); today.setHours(0, 0, 0, 0);
+                const due = new Date(dateStr);
+                return due < today;
+            };
+
+            const getAlertLevel = (tenggat) => {
+                if (!tenggat) return 'none';
+                const today = new Date(); today.setHours(0, 0, 0, 0);
+                const dueDate = new Date(tenggat);
+                const diffTime = dueDate - today;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                if (diffDays < 0) return 'overdue';
+                if (diffDays <= 3) return 'warning';
+                return 'safe';
+            };
+
+            // --- DERIVED STATE ---
+            const stats = useMemo(() => {
+                let totalModal = 0, totalPanen = 0;
+                vault.forEach(item => {
+                    const nominal = parseInt(item.metaNominal) || 0;
+                    if (item.metaJenis === 'Modal') totalModal += nominal;
+                    if (item.metaJenis === 'Panen') totalPanen += nominal;
+                });
+                return { totalModal, totalPanen, balance: totalPanen - totalModal };
+            }, [vault]);
+
+            const folders = useMemo(() => {
+                const uniqueFolders = new Set(vault.map(item => item.metaFolder).filter(f => f));
+                return ['Semua', ...Array.from(uniqueFolders)];
+            }, [vault]);
+
+            const filteredVault = useMemo(() => {
+                return vault.filter(item => {
+                    const matchSearch = item.metaPetani.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        item.metaKomoditas.toLowerCase().includes(searchTerm.toLowerCase());
+                    const matchFolder = folderFilter === 'Semua' || item.metaFolder === folderFilter;
+                    return matchSearch && matchFolder;
+                });
+            }, [vault, searchTerm, folderFilter]);
+
+            const calcResult = useMemo(() => {
+                const h = parseInt(calcHarvest.replace(/[^\d]/g, '')) || 0;
+                const m = parseInt(calcModal.replace(/[^\d]/g, '')) || 0;
+                return h - m;
+            }, [calcHarvest, calcModal]);
+
+            // --- ACTIONS ---
+            const handleAuth = (e) => {
+                e.preventDefault();
+                if (authMode === 'login') {
+                    const user = registeredUsers.find(u => u.username === authForm.username && u.password === authForm.password);
+                    if (user) {
+                        setIsLoggedIn(true); setCurrentUser(user.username);
+                        setCurrentRole(user.role || 'OPERATOR'); setError('');
+                    }
+                    else { setError('❌ LOGIN GAGAL'); }
+                } else {
+                    if (registeredUsers.find(u => u.username === authForm.username)) { setError('❌ USER SUDAH ADA'); return; }
+                    setRegisteredUsers([...registeredUsers, { ...authForm, role: 'OPERATOR' }]);
+                    setSuccessMsg('✅ REGISTRASI BERHASIL!'); setAuthMode('login'); setError('');
+                }
+            };
+
+            const handleSaveTransaction = (e) => {
+                e.preventDefault();
+                if (isEditing) {
+                    const target = vault.find(v => v.id === editingId);
+                    if (!decryptAES(target.content, newTransaction.encryptionKey)) {
+                        setError('❌ PASSWORD SALAH: Validasi perubahan gagal.'); return;
+                    }
+                }
+
+                const cleanAmount = newTransaction.nominal.toString().replace(/[^\d]/g, '');
+                const finalTenggat = newTransaction.jenis_transaksi === 'Panen' ? '' : newTransaction.tenggat_panen;
+                const rawData = JSON.stringify({ ...newTransaction, nominal: cleanAmount, tenggat_panen: finalTenggat, waktu: new Date().toLocaleString('id-ID') });
+                const ciphertext = encryptAES(rawData, newTransaction.encryptionKey);
+                if (!ciphertext) return;
+
+                if (isEditing) {
+                    setVault(vault.map(v => v.id === editingId ? {
+                        ...v, content: ciphertext, metaPetani: newTransaction.petani, metaKomoditas: newTransaction.komoditas,
+                        metaNominal: cleanAmount, metaJenis: newTransaction.jenis_transaksi, metaFolder: newTransaction.kelompok_tani || "Umum",
+                        metaTenggat: finalTenggat
+                    } : v));
+                } else {
+                    setVault([{
+                        id: Math.floor(Math.random() * 9000) + 1000, admin: currentUser, content: ciphertext,
+                        timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                        metaPetani: newTransaction.petani,
+                        metaKomoditas: newTransaction.komoditas, metaNominal: cleanAmount, metaJenis: newTransaction.jenis_transaksi,
+                        metaFolder: newTransaction.kelompok_tani || "Umum", metaTenggat: finalTenggat
+                    }, ...vault]);
+                }
+
+                setShowAddModal(false); setIsEditing(false); setEditingId(null); setError(''); setCalcHarvest(''); setCalcModal('');
+                setNewTransaction({ petani: '', komoditas: '', nominal: '', jenis_transaksi: 'Modal', kelompok_tani: '', tenggat_panen: '', keterangan: '', encryptionKey: '' });
+            };
+
+            const handleVerifyDelete = (e) => {
+                e.preventDefault();
+                const target = vault.find(v => v.id === selectedRecord.id);
+                if (decryptAES(target.content, deleteKey)) {
+                    setVault(vault.filter(v => v.id !== selectedRecord.id));
+                    setShowDeleteModal(false); setDeleteKey(''); setError('');
+                } else { setError('❌ PASSWORD SALAH.'); }
+            };
+
+            const handleEditClick = (record) => {
+                setEditingId(record.id); setIsEditing(true);
+                setNewTransaction({ petani: record.metaPetani, komoditas: record.metaKomoditas, nominal: record.metaNominal, jenis_transaksi: record.metaJenis, kelompok_tani: record.metaFolder, tenggat_panen: record.metaTenggat || '', keterangan: '', encryptionKey: '' });
+                setError(''); setShowAddModal(true);
+            };
+
+            const handleOpenTransaction = () => {
+                const result = decryptAES(selectedRecord.content, decryptionKey);
+                if (result) { try { setDecryptedData(JSON.parse(result)); setError(''); } catch (e) { setError('❌ DATA RUSAK'); } }
+                else { setError('❌ MASTER KEY SALAH!'); }
+            };
+
+            const generateReceiptPDF = () => {
+                if (!decryptedData) return;
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(22);
+                doc.text("AGRISAVE.IO", 20, 20);
+
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "normal");
+                doc.text("STRUK TRANSAKSI DIGITAL TERENKRIPSI", 20, 30);
+
+                doc.setDrawColor(0, 0, 0);
+                doc.line(20, 35, 190, 35);
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(12);
+                doc.text("DETAIL TRANSAKSI:", 20, 50);
+
+                const startY = 65;
+                const rowH = 10;
+
+                const formattedNominal = parseInt(decryptedData.nominal || 0).toLocaleString('id-ID');
+
+                const items = [
+                    ["ID Transaksi", `: AGRI-${selectedRecord.id}-${selectedRecord.timestamp.replace(/:/g, '.')}`],
+                    ["Petani / Kelompok", `: ${decryptedData.petani.toUpperCase()}`],
+                    ["Komoditas", `: ${decryptedData.komoditas.toUpperCase()}`],
+                    ["Jenis Transaksi", `: ${decryptedData.jenis_transaksi.toUpperCase()}`],
+                    ["Nominal", `: Rp ${formattedNominal}`],
+                    ["Waktu Pencatatan", `: ${decryptedData.waktu}`],
+                    ["Operator Admin", `: ${selectedRecord.admin.toUpperCase()}`]
+                ];
+
+                items.forEach((item, i) => {
+                    doc.setFont("helvetica", "bold"); doc.text(item[0], 20, startY + (i * rowH));
+                    doc.setFont("helvetica", "normal"); doc.text(item[1], 70, startY + (i * rowH));
+                });
+
+                doc.setFont("helvetica", "bold");
+                doc.text("Catatan Tambahan:", 20, startY + (items.length * rowH) + 10);
+                doc.setFont("helvetica", "normal");
+                doc.text(decryptedData.keterangan || "-", 20, startY + (items.length * rowH) + 20);
+
+                doc.setFontSize(9);
+                doc.text(`Doc Ref: ${studentName} (${studentNPM})`, 20, 260);
+                doc.text("Pesan ini dibuat secara otomatis oleh sistem enkripsi Agrisave.", 20, 265);
+
+                doc.setFont("helvetica", "bold");
+                doc.text("VERIFIED BY", 150, 240);
+                doc.text("AGRISAVE KERNEL", 150, 250);
+
+                doc.save(`Struk_Agrisave_${selectedRecord.id}.pdf`);
+            };
+
+            if (!isLoggedIn) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center p-6 relative">
+                        <div className="absolute inset-0 pointer-events-none opacity-5 overflow-hidden">
+                            <div className="absolute top-20 left-20 text-8xl animate-float font-black text-white">AGRISAVE</div>
+                            <div className="absolute bottom-40 right-20 text-9xl animate-float font-black text-white" style={{ animationDelay: '2s' }}>VAULT</div>
+                        </div>
+                        <div className="max-w-md w-full bg-black/40 backdrop-blur-3xl border border-white/10 rounded-[3.5rem] p-10 shadow-2xl relative z-10 card-glow animate-in fade-in duration-500 text-center">
+                            <TopHighlight />
+                            <div className="bg-[#bef264] p-4 rounded-3xl text-black mb-4 shadow-[0_0_20px_#bef264] inline-block"><Icon name="shield" size={40} /></div>
+                            <h1 className="text-3xl font-black text-white uppercase tracking-tighter">AGRISAVE<span className="text-[#bef264]">.IO</span></h1>
+                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.4em] mt-2 italic mb-8">Precision Security Framework</p>
+                            <form onSubmit={handleAuth} className="space-y-4">
+                                <input type="text" className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-[#bef264]/40 transition font-mono" placeholder="USERNAME" required value={authForm.username} onChange={e => setAuthForm({ ...authForm, username: e.target.value })} />
+                                <input type="password" className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-[#bef264]/40 transition font-mono" placeholder="PASSWORD" required value={authForm.password} onChange={e => setAuthForm({ ...authForm, password: e.target.value })} />
+                                {error && <p className="text-red-500 text-[10px] font-bold">{error}</p>}
+                                <button className="w-full bg-[#bef264] text-black font-black py-5 rounded-full uppercase text-xs tracking-widest hover:scale-[1.02] transition shadow-lg">{authMode === 'login' ? 'Authorize Login' : 'Register Operator'}</button>
+                            </form>
+                            <button onClick={() => { setAuthMode(authMode === 'login' ? 'register' : 'login'); setError(''); }} className="mt-8 text-[10px] text-gray-500 uppercase tracking-widest font-bold hover:text-[#bef264] transition">{authMode === 'login' ? 'Belum Punya Akses? Daftar' : 'Sudah Punya Akun? Login'}</button>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen pb-32">
+                    <nav className="fixed top-8 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-6xl">
+                        <div className="bg-black/60 backdrop-blur-3xl border border-white/5 px-8 py-4 rounded-full flex items-center justify-between shadow-2xl relative overflow-hidden">
+                            <TopHighlight />
+                            <div className="flex items-center gap-3"><Icon name="shield" className="text-[#bef264]" /><span className="font-black text-white uppercase tracking-tighter">AGRISAVE<span className="text-[#bef264]">.IO</span></span></div>
+                            <div className="flex items-center gap-6">
+                                <div className="hidden md:flex flex-col items-end pr-4 border-r border-white/10">
+                                    <span className="text-[11px] font-black text-white uppercase">{currentUser}</span>
+                                    <span className="text-[8px] text-gray-500 font-bold uppercase tracking-widest">{currentRole.replace('_', ' ')}</span>
+                                </div>
+                                <div className="w-10 h-10 rounded-full bg-[#bef264] flex items-center justify-center text-black font-black text-lg shadow-[0_0_15px_rgba(190,242,100,0.4)]">{currentUser.charAt(0).toUpperCase()}</div>
+                                <button onClick={() => setIsLoggedIn(false)} className="text-gray-500 hover:text-red-500 transition-colors"><Icon name="log-out" /></button>
+                            </div>
+                        </div>
+                    </nav>
+
+                    <main className="pt-48 px-6 max-w-6xl mx-auto space-y-12 text-left">
+                        {/* STATS */}
+                        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="bg-white/5 border border-white/10 p-8 rounded-[2.5rem] relative overflow-hidden card-glow">
+                                <TopHighlight />
+                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2">Total Modal Tani</p>
+                                <h3 className="text-3xl font-black text-white">Rp {stats.totalModal.toLocaleString('id-ID')}</h3>
+                            </div>
+                            <div className="bg-white/5 border border-white/10 p-8 rounded-[2.5rem] relative overflow-hidden card-glow">
+                                <TopHighlight />
+                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2">Hasil Panen</p>
+                                <h3 className="text-3xl font-black text-[#bef264]">Rp {stats.totalPanen.toLocaleString('id-ID')}</h3>
+                            </div>
+                            <div className="bg-white/5 border border-white/10 p-8 rounded-[2.5rem] relative overflow-hidden card-glow">
+                                <TopHighlight />
+                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Net Portfolio</p>
+                                <h3 className={`text-3xl font-black ${stats.balance >= 0 ? 'text-blue-400' : 'text-red-400'}`}>Rp {Math.abs(stats.balance).toLocaleString('id-ID')}</h3>
+                            </div>
+                        </section>
+
+                        <div className="flex flex-col lg:flex-row items-center justify-between gap-6 bg-black/40 p-6 rounded-[2.5rem] border border-white/5 shadow-xl">
+                            <div className="flex flex-col md:flex-row gap-4 w-full lg:max-w-3xl">
+                                <div className="relative flex-1 group"><Icon name="search" className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-[#bef264]" /><input type="text" placeholder="Cari Petani..." className="w-full bg-white/5 border border-white/10 rounded-full pl-14 pr-6 py-4 text-sm outline-none text-white focus:border-[#bef264]/40" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
+                                <div className="relative flex-1 md:max-w-[200px] group"><Icon name="folder" className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-[#bef264]" /><select className="w-full bg-white/5 border border-white/10 rounded-full pl-14 pr-6 py-4 text-sm outline-none text-white appearance-none focus:border-[#bef264]/40 cursor-pointer" value={folderFilter} onChange={e => setFolderFilter(e.target.value)}>{folders.map(f => <option key={f} className="bg-black" value={f}>{f}</option>)}</select></div>
+                            </div>
+                            <button onClick={() => { setIsEditing(false); setShowAddModal(true); setError(''); }} className="w-full lg:w-auto bg-[#bef264] text-black font-black px-8 py-4 rounded-full text-[10px] uppercase tracking-widest shadow-lg flex items-center justify-center gap-3 hover:scale-105 transition font-bold"><Icon name="plus" /> New Entry</button>
+                        </div>
+
+                        {/* GRID */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {filteredVault.map((item) => {
+                                const al = getAlertLevel(item.metaTenggat);
+                                return (
+                                    <div key={item.id} className={`bg-black/40 backdrop-blur-3xl border border-white/5 p-10 rounded-[3.5rem] relative overflow-hidden group hover:border-[#bef264]/30 transition-all card-glow ${al === 'overdue' ? 'animate-overdue border-red-500/50' : al === 'warning' ? 'border-yellow-500/50' : ''}`}>
+                                        <TopHighlight />
+                                        <div className="flex justify-between items-start mb-8 text-left">
+                                            <div className="bg-[#bef264]/10 p-3 rounded-2xl text-[#bef264]"><Icon name={item.metaJenis === 'Modal' ? "trending-down" : "trending-up"} /></div>
+                                            <div className="flex gap-2">
+                                                {currentRole === 'SUPER_ADMIN' && (<><button onClick={() => handleEditClick(item)} className="p-2 bg-white/5 rounded-lg text-gray-400 hover:text-[#bef264] transition-colors"><Icon name="edit" size={16} /></button><button onClick={() => { setSelectedRecord(item); setShowDeleteModal(true); setError(''); setDeleteKey(''); }} className="p-2 bg-white/5 rounded-lg text-gray-400 hover:text-red-500 transition-colors"><Icon name="trash" size={16} /></button></>)}
+                                            </div>
+                                        </div>
+                                        <div className="space-y-4 mb-10">
+                                            <div className="flex items-center gap-2"><Icon name="user" className="text-[#bef264]" size={16} /><span className="text-sm font-black text-white uppercase truncate">{item.metaPetani}</span></div>
+                                            <div className="text-[9px] text-white/40 uppercase font-black">KELOMPOK: {item.metaFolder}</div>
+                                            {item.metaTenggat && item.metaJenis === 'Modal' && (<div className={`flex items-center gap-2 text-[9px] font-black uppercase ${al === 'overdue' ? 'text-red-500 animate-pulse' : al === 'warning' ? 'text-yellow-500' : 'text-gray-500'}`}><Icon name="calendar" size={12} /> Tenggat: {item.metaTenggat} {al === 'overdue' && "(OVERDUE)"}</div>)}
+                                            <div className="bg-black/60 p-4 rounded-2xl border border-white/5 font-mono text-[9px] text-[#bef264]/40 break-all h-16 line-clamp-2 overflow-hidden italic leading-relaxed">{item.content}</div>
+                                        </div>
+                                        <button onClick={() => { setSelectedRecord(item); setShowDecryptModal(true); setDecryptedData(null); setDecryptionKey(''); setError(''); }} className="w-full py-5 bg-white/5 hover:bg-[#bef264] text-gray-400 hover:text-black rounded-[2rem] text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 font-bold border border-white/5"><Icon name="unlock" /> Open Record</button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </main>
+
+                    {/* MODAL: ADD / EDIT */}
+                    {showAddModal && (
+                        <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[100] flex items-center justify-center p-6 text-left animate-in zoom-in duration-300">
+                            <div className="bg-[#0a0c10] w-full max-w-4xl rounded-[4rem] border border-white/10 overflow-hidden shadow-2xl relative">
+                                <TopHighlight />
+                                <div className="bg-[#bef264] p-8 text-black flex justify-between items-center"><h3 className="text-2xl font-black uppercase tracking-tighter">{isEditing ? 'Update Entry' : 'Cipher Entry'}</h3><button onClick={() => setShowAddModal(false)} className="hover:rotate-90 transition-transform">✕</button></div>
+                                <div className="flex flex-col lg:flex-row">
+                                    <form onSubmit={handleSaveTransaction} className="flex-1 p-10 space-y-6 border-b lg:border-b-0 lg:border-r border-white/5">
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <div className="space-y-1"><label className="text-[9px] font-black text-gray-500 uppercase ml-4">Nama Petani</label><input type="text" className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-[#bef264]/40 transition" required value={newTransaction.petani} onChange={e => setNewTransaction({ ...newTransaction, petani: e.target.value })} /></div>
+                                            <div className="space-y-1"><label className="text-[9px] font-black text-gray-500 uppercase ml-4">Komoditas</label><input type="text" className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-[#bef264]/40 transition" required value={newTransaction.komoditas} onChange={e => setNewTransaction({ ...newTransaction, komoditas: e.target.value })} /></div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <div className="space-y-1"><label className="text-[9px] font-black text-gray-500 uppercase ml-4">Kelompok Tani</label><input type="text" className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-[#bef264]/40 transition" required value={newTransaction.kelompok_tani} onChange={e => setNewTransaction({ ...newTransaction, kelompok_tani: e.target.value })} /></div>
+                                            <div className="space-y-1"><label className="text-[9px] font-black text-gray-500 uppercase ml-4">Jenis Transaksi</label><select className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-[#bef264]/40" value={newTransaction.jenis_transaksi} onChange={e => setNewTransaction({ ...newTransaction, jenis_transaksi: e.target.value })}><option className="bg-black" value="Modal">Pinjaman Modal</option><option className="bg-black" value="Panen">Setoran Panen</option></select></div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <div className="space-y-1"><label className="text-[9px] font-black text-gray-500 uppercase ml-4">Nominal (Rp)</label><input type="text" className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white outline-none font-mono focus:border-[#bef264]/40" required value={newTransaction.nominal} onChange={e => setNewTransaction({ ...newTransaction, nominal: e.target.value })} /></div>
+                                            <div className="space-y-1"><label className={`text-[9px] font-black uppercase ml-4 transition-colors ${newTransaction.jenis_transaksi !== 'Modal' ? 'text-gray-700' : 'text-gray-500'}`}>Tenggat Panen</label><input type="date" disabled={newTransaction.jenis_transaksi !== 'Modal'} className={`w-full bg-white/5 border rounded-2xl px-6 py-4 text-white outline-none transition-all ${newTransaction.jenis_transaksi !== 'Modal' ? 'opacity-20 cursor-not-allowed' : 'border-white/10 focus:border-[#bef264]/40'}`} value={newTransaction.jenis_transaksi !== 'Modal' ? '' : newTransaction.tenggat_panen} onChange={e => setNewTransaction({ ...newTransaction, tenggat_panen: e.target.value })} /></div>
+                                        </div>
+                                        <div className="bg-[#bef264]/10 p-6 rounded-[2.5rem] border border-[#bef264]/30"><p className="text-[10px] font-black text-[#bef264] mb-3 uppercase text-center flex items-center justify-center gap-2"><Icon name="key" size={12} /> Verify Master Key</p><input type="password" className="w-full bg-black/40 border border-white/10 rounded-2xl px-8 py-5 text-white text-center text-xl font-mono outline-none focus:border-[#bef264]" required value={newTransaction.encryptionKey} onChange={e => setNewTransaction({ ...newTransaction, encryptionKey: e.target.value })} />{error && <p className="text-red-500 text-[10px] font-bold text-center mt-4 uppercase animate-pulse">{error}</p>}</div>
+                                        <button type="submit" className="w-full bg-[#bef264] text-black font-black py-5 rounded-full uppercase text-xs tracking-widest shadow-xl font-bold">{isEditing ? 'Re-Encrypt & Update' : 'Secure and Store Data'}</button>
+                                    </form>
+                                    <div className="w-full lg:w-80 bg-white/5 p-10 flex flex-col gap-8"><div className="flex items-center gap-3 text-[#bef264]"><Icon name="calculator" size={24} /><h4 className="text-sm font-black uppercase tracking-tighter">Smart Estimator</h4></div><div className="space-y-6"><div className="space-y-1"><label className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Estimasi Panen</label><input type="text" placeholder="Rp..." className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#bef264]/40" value={calcHarvest} onChange={e => setCalcHarvest(e.target.value)} /></div><div className="space-y-1"><label className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Modal Awal</label><input type="text" placeholder="Rp..." className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#bef264]/40" value={calcModal} onChange={e => setCalcModal(e.target.value)} /></div><div className="mt-10 p-6 rounded-3xl bg-black/60 border border-white/5 text-center relative overflow-hidden"><p className="text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-3">Profit Estimate</p><div className={`text-xl font-black relative z-10 tracking-tighter ${calcResult >= 0 ? 'text-[#bef264]' : 'text-red-500'}`}>{calcResult < 0 ? "-" : ""} Rp {Math.abs(calcResult).toLocaleString('id-ID')}</div><div className={`absolute inset-0 opacity-5 blur-2xl ${calcResult >= 0 ? 'bg-[#bef264]' : 'bg-red-500'}`}></div></div></div></div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* MODAL: DELETE */}
+                    {showDeleteModal && (
+                        <div className="fixed inset-0 bg-black/95 backdrop-blur-3xl z-[100] flex items-center justify-center p-6 animate-in zoom-in duration-300">
+                            <div className="bg-[#0a0c10] w-full max-w-md rounded-[4rem] border border-white/10 overflow-hidden shadow-2xl relative text-center">
+                                <TopHighlight />
+                                <div className="p-12">
+                                    <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-8 shadow-[0_0_20px_rgba(239,68,68,0.2)]">
+                                        <Icon name="alert" size={40} className="text-red-500" />
+                                    </div>
+                                    <h3 className="text-2xl font-black text-white mb-4 uppercase tracking-tighter">Authorize Removal</h3>
+                                    <p className="text-gray-500 text-[10px] font-bold uppercase tracking-[0.2em] mb-10 leading-relaxed">Masukkan Master Key data ini untuk menghapus secara permanen.</p>
+                                    <form onSubmit={handleVerifyDelete} className="space-y-6">
+                                        <input type="password" className="w-full bg-white/5 border border-white/10 rounded-full px-8 py-5 text-white text-center text-2xl font-mono outline-none focus:border-red-500/40" placeholder="••••" autoFocus value={deleteKey} onChange={e => setDeleteKey(e.target.value)} required />
+                                        {error && <p className="text-red-500 font-bold text-[10px] uppercase animate-pulse">{error}</p>}
+                                        <div className="flex gap-4">
+                                            <button type="submit" className="flex-1 bg-red-600 text-white font-black py-5 rounded-full uppercase text-[10px] tracking-widest font-bold">Delete Now</button>
+                                            <button type="button" onClick={() => setShowDeleteModal(false)} className="flex-1 bg-white/5 text-gray-400 font-black py-5 rounded-full uppercase text-[10px] border border-white/10">Cancel</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* MODAL: DECRYPT */}
+                    {showDecryptModal && (
+                        <div className="fixed inset-0 bg-black/95 backdrop-blur-3xl z-[100] flex items-center justify-center p-6 text-left animate-in fade-in duration-500">
+                            <div className="bg-[#0a0c10] w-full max-w-xl rounded-[4rem] border border-white/10 overflow-hidden shadow-2xl relative">
+                                <TopHighlight />
+                                {!decryptedData ? (
+                                    <div className="p-16 text-center">
+                                        <Icon name="unlock" size={40} className="text-[#bef264] mx-auto mb-8 shadow-[0_0_20px_#bef264]" />
+                                        <h3 className="text-3xl font-black text-white mb-4 uppercase tracking-tighter leading-none text-center">Authorization Required</h3>
+                                        <input type="password" className="w-full bg-white/5 border border-white/10 rounded-full px-10 py-6 text-white text-center text-3xl font-mono mb-8 outline-none focus:border-[#bef264]/40" placeholder="••••" autoFocus value={decryptionKey} onChange={e => setDecryptionKey(e.target.value)} />
+                                        {error && <p className="text-red-500 font-bold mb-8 text-[10px] uppercase tracking-widest">{error}</p>}
+                                        <button onClick={handleOpenTransaction} className="w-full bg-[#bef264] text-black font-black py-6 rounded-full uppercase text-xs tracking-widest shadow-xl font-bold">Verify Access</button>
+                                        <button onClick={() => setShowDecryptModal(false)} className="mt-8 text-gray-600 text-[10px] font-bold uppercase tracking-widest block mx-auto hover:text-white transition">Back to Dashboard</button>
+                                    </div>
+                                ) : (
+                                    <div className="animate-in slide-in-from-bottom-10 duration-500">
+                                        <div className="bg-[#bef264] p-10 text-black flex justify-between items-center">
+                                            <div className="text-left">
+                                                <h1 className="text-3xl font-black uppercase tracking-tighter leading-none text-left">Transaction Restored</h1>
+                                                <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mt-2 italic text-left">STATUS: DECRYPTED_SUCCESS</p>
+                                            </div>
+                                            <Icon name="shield-check" size={56} />
+                                        </div>
+                                        <div className="p-10 space-y-6 max-h-[65vh] overflow-y-auto custom-scrollbar">
+                                            <div className="grid grid-cols-2 gap-6">
+                                                <div className="bg-white/5 p-6 rounded-3xl border border-white/10 text-left">
+                                                    <p className="text-[9px] text-gray-500 font-black uppercase mb-2 tracking-widest text-left">Tipe</p>
+                                                    <p className={`text-xl font-black text-left ${decryptedData.jenis_transaksi === 'Panen' ? 'text-green-500' : 'text-red-500'}`}>
+                                                        {decryptedData.jenis_transaksi === 'Panen' ? 'Pemasukan' : 'Pengeluaran'}
+                                                    </p>
+                                                </div>
+                                                <div className="bg-white/5 p-6 rounded-3xl border border-white/10 text-left">
+                                                    <p className="text-[9px] text-gray-500 font-black uppercase mb-2 tracking-widest text-left">Nominal</p>
+                                                    <p className="text-xl font-black text-white text-left">Rp {parseInt(decryptedData.nominal || 0).toLocaleString('id-ID')}</p>
+                                                </div>
+                                            </div>
+                                            <div className="bg-white/5 p-6 rounded-3xl border border-white/10 flex items-center gap-4 text-left">
+                                                <Icon name="tag" className="text-[#bef264]" size={18} />
+                                                <div className="text-left">
+                                                    <p className="text-[8px] text-gray-500 font-black uppercase tracking-widest text-left">Kategori</p>
+                                                    <p className="text-sm font-black text-white uppercase text-left">{decryptedData.petani} / {decryptedData.kelompok_tani}</p>
+                                                </div>
+                                            </div>
+                                            <div className="bg-white/5 p-6 rounded-3xl border border-white/10 flex items-center gap-4 text-left">
+                                                <Icon name="calendar" className="text-[#bef264]" size={18} />
+                                                <div className="text-left">
+                                                    <p className="text-[8px] text-gray-500 font-black uppercase tracking-widest text-left">Timestamp</p>
+                                                    <p className="text-sm font-bold text-white text-left">{decryptedData.waktu}</p>
+                                                </div>
+                                            </div>
+                                            <div className="bg-white/5 p-6 rounded-3xl border border-white/10 flex items-start gap-4 text-left">
+                                                <Icon name="fileText" className="text-[#bef264] mt-1" size={18} />
+                                                <div className="text-left">
+                                                    <p className="text-[8px] text-gray-500 font-black uppercase tracking-widest text-left">Deskripsi</p>
+                                                    <p className="text-sm font-medium italic text-gray-400 leading-relaxed text-left">"{decryptedData.keterangan || '-'}"</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-4 pt-4">
+                                                <button onClick={generateReceiptPDF} className="flex-1 bg-white text-black font-black py-5 rounded-[2.5rem] uppercase text-[10px] tracking-widest flex items-center justify-center gap-3 hover:bg-[#bef264] transition shadow-xl font-bold border-none"><Icon name="printer" size={18} /> Print</button>
+                                                <button onClick={() => setShowDecryptModal(false)} className="flex-1 bg-white/5 text-gray-400 font-black py-5 rounded-[2.5rem] uppercase text-[10px] border border-white/10 font-bold">Tutup Sesi</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    <footer className="fixed bottom-0 w-full px-12 py-8 flex flex-col md:flex-row justify-between items-center text-[10px] font-bold text-gray-600 z-40 pointer-events-none text-left">
+                        <div className="opacity-40 uppercase italic tracking-widest pointer-events-auto">AgriSave Pro | Universitas Bengkulu 2026</div>
+                        <div className="flex items-center gap-8 bg-black/40 px-10 py-3 rounded-full border border-white/5 backdrop-blur-2xl shadow-2xl relative overflow-hidden pointer-events-auto text-left">
+                            <TopHighlight />
+                            <div className="flex items-center gap-4 border-r border-white/10 pr-8 text-left">
+                                <div className="w-2 h-2 bg-[#bef264] rounded-full shadow-[0_0_10px_#bef264] animate-pulse"></div>
+                                <span className="text-white/40 uppercase tracking-widest font-extrabold text-left">{studentName}</span>
+                            </div>
+                            <span className="text-[#bef264]/80 uppercase tracking-widest font-black text-left">{studentNPM}</span>
+                        </div>
+                    </footer>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+
+</html>

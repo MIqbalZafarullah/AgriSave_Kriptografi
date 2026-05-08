@@ -1,0 +1,121 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    @apply bg-[#05070a] text-gray-300 font-sans;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { @apply bg-lime-400/20 rounded-full; }
+}
+
+@layer components {
+  /* ── Cards ── */
+  .card {
+    @apply bg-[#0a0c10] border border-white/[0.06] rounded-3xl relative overflow-hidden
+           transition-all duration-300 hover:border-white/10;
+  }
+  .card-glow:hover {
+    box-shadow: 0 0 40px rgba(190,242,100,0.06);
+    @apply border-lime-400/20;
+  }
+  .top-highlight::before {
+    content: '';
+    @apply absolute top-0 left-0 w-full h-px;
+    background: linear-gradient(90deg, transparent, rgba(190,242,100,0.4), transparent);
+  }
+
+  /* ── Inputs ── */
+  .input-base {
+    @apply w-full bg-white/[0.04] border border-white/10 rounded-2xl px-5 py-3.5
+           text-white text-sm outline-none transition-all duration-200
+           placeholder:text-gray-600 font-mono
+           focus:border-lime-400/40 focus:bg-white/[0.06];
+  }
+  .input-base:disabled { @apply opacity-30 cursor-not-allowed; }
+
+  /* ── Buttons ── */
+  .btn-primary {
+    @apply bg-lime-400 text-black font-black text-xs uppercase tracking-widest
+           py-4 px-8 rounded-full transition-all duration-200
+           hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(190,242,100,0.3)]
+           active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-ghost {
+    @apply bg-white/[0.04] text-gray-400 font-bold text-xs uppercase tracking-widest
+           py-4 px-8 rounded-full border border-white/10 transition-all duration-200
+           hover:bg-white/[0.08] hover:text-white;
+  }
+  .btn-danger {
+    @apply bg-red-600/80 text-white font-black text-xs uppercase tracking-widest
+           py-4 px-8 rounded-full transition-all duration-200
+           hover:bg-red-500 hover:scale-[1.02]
+           active:scale-[0.98];
+  }
+  .btn-sm {
+    @apply py-2 px-4 text-[10px];
+  }
+
+  /* ── Badges ── */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest;
+  }
+  .badge-lime   { @apply badge bg-lime-400/10 text-lime-400; }
+  .badge-red    { @apply badge bg-red-500/10 text-red-400; }
+  .badge-blue   { @apply badge bg-blue-500/10 text-blue-400; }
+  .badge-yellow { @apply badge bg-yellow-500/10 text-yellow-400; }
+  .badge-purple { @apply badge bg-purple-500/10 text-purple-400; }
+
+  /* ── Role colors ── */
+  .role-super_admin { @apply badge bg-lime-400/20 text-lime-300; }
+  .role-admin       { @apply badge bg-blue-500/20 text-blue-300; }
+  .role-operator    { @apply badge bg-purple-500/20 text-purple-300; }
+  .role-viewer      { @apply badge bg-gray-500/20 text-gray-400; }
+
+  /* ── Modal overlay ── */
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/80 backdrop-blur-xl z-50
+           flex items-center justify-center p-4;
+  }
+  .modal-box {
+    @apply card w-full max-w-xl shadow-2xl animate-slide-up;
+  }
+
+  /* ── Stat card ── */
+  .stat-card {
+    @apply card p-6 top-highlight card-glow;
+  }
+
+  /* ── Table ── */
+  .tbl-head { @apply text-[10px] font-black uppercase tracking-widest text-gray-500 text-left py-3 px-4; }
+  .tbl-cell { @apply text-sm text-gray-300 py-3 px-4; }
+  .tbl-row  { @apply border-b border-white/5 hover:bg-white/[0.02] transition-colors; }
+
+  /* ── Nav link ── */
+  .nav-link {
+    @apply flex items-center gap-2.5 px-4 py-3 rounded-2xl text-sm font-semibold
+           text-gray-500 transition-all duration-200 cursor-pointer
+           hover:text-white hover:bg-white/[0.06];
+  }
+  .nav-link.active {
+    @apply text-lime-400 bg-lime-400/10;
+  }
+
+  /* ── Alert ── */
+  .alert-overdue { animation: pulse-red 1.5s infinite; @apply border-red-500/50 !important; }
+}
+
+@layer utilities {
+  .text-gradient-lime {
+    @apply bg-gradient-to-r from-lime-400 to-green-400 bg-clip-text text-transparent;
+  }
+  .glow-lime { box-shadow: 0 0 20px rgba(190,242,100,0.25); }
+  .glow-red  { box-shadow: 0 0 20px rgba(239,68,68,0.25); }
+}
