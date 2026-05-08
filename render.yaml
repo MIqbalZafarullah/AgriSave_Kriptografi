@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: agrisave-backend
+    runtime: node
+    rootDir: agrisave-backend
+    buildCommand: npm install && npm run init-db && npm run seed
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: BCRYPT_SALT_ROUNDS
+        value: 12
+      - key: JWT_EXPIRES_IN
+        value: 15m
+      - key: REFRESH_TOKEN_EXPIRES_IN
+        value: 7d
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 900000
+      - key: RATE_LIMIT_MAX
+        value: 100
+      - key: LOGIN_RATE_LIMIT_MAX
+        value: 5
+      # Isi nilai berikut di Render Dashboard (jangan di-commit):
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: SYSTEM_MASTER_KEY
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
