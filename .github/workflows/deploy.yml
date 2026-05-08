@@ -38,8 +38,7 @@ jobs:
         run: npm run build
         env:
           VITE_BASE_PATH: /AgriSave_Kriptografi/
-          # Ganti dengan URL backend Render Anda setelah deploy backend
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_API_URL: https://agrisave-kriptografi.onrender.com
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
