@@ -5,8 +5,14 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
+// Di local: proxy ke localhost:5000 via vite proxy
+// Di production (Render): pakai VITE_API_URL env variable
+const BASE_URL = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : '/api';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: BASE_URL,
   withCredentials: true, // untuk HttpOnly cookie (refresh token)
   headers: { 'Content-Type': 'application/json' },
 });
